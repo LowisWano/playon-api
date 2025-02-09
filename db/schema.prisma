@@ -1,8 +1,8 @@
 // database
 datasource db {
   provider  = "postgres"
-  url       = ""
-  directUrl = ""
+  url       = env("SUPA_URL")
+  directUrl = env("SUPA_DIRECT_URL")
 }
 
 // generator
@@ -11,20 +11,141 @@ generator client {
   recursive_type_depth = 5
 }
 
-// data models
-model Post {
-  id        Int     @id @default(autoincrement())
-  title     String
-  content   String?
-  views     Int     @default(0)
-  published Boolean @default(false)
-  author    User?   @relation(fields: [author_id], references: [id])
-  author_id Int?
+// ...existing code...
+model Users {
+  id                Int               @id @default(autoincrement()) @map("user_id")
+  username          String            @db.VarChar(20)
+  email             String            @db.VarChar(50)
+  password          String
+  location          String
+  profile_pic       String
+  rank              Int               @default(0)
+  is_verified       Boolean           @default(false)
+  xp                Int               @default(0)
+  role              String
+  chats_sent        Chat[]            @relation("SenderChats")
+  chats_received    Chat[]            @relation("ReceiverChats")
+  messages          Message[]
+  match_users       MatchUser[]
+  teams             Team[]
+  team_users        TeamUser[]
+  group_users       GroupUser[]
+  created_groups    GroupChat[]       @relation("CreatedGroups")
+  leaderboard_users LeaderboardUser[]
 }
 
-model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
-  posts Post[]
+model Sport {
+  id            Int       @id @default(autoincrement()) @map("sport_id")
+  sport_name    String    @db.VarChar(50)
+  description   String    @db.VarChar(100)
+  rules         String    @db.VarChar(100)
+  matches       Match[]
+  leaderboards  Leaderboard[]
+}
+
+model Match {
+  id            Int         @id @default(autoincrement()) @map("match_id")
+  sport_id      Int
+  location      String
+  start_time    DateTime
+  end_time      DateTime
+  skill_level   Int
+  match_type    String
+  accessibility Boolean
+  sport         Sport       @relation(fields: [sport_id], references: [id])
+  match_users   MatchUser[]
+  team_matches  TeamMatch[]
+}
+
+model Chat {
+  id          Int       @id @default(autoincrement()) @map("chat_id")
+  sender_id   Int
+  receiver_id Int
+  // Will create a supabase function to update
+  created_at  DateTime 
+  sender      Users      @relation("SenderChats", fields: [sender_id], references: [id])
+  receiver    Users      @relation("ReceiverChats", fields: [receiver_id], references: [id])
+  messages    Message[]
+}
+
+model Message {
+  id         Int      @id @default(autoincrement()) @map("message_id")
+  chat_id    Int
+  sender_id  Int
+  content    String
+  // Will create a supabase function to update
+  sent_at    DateTime
+  chat       Chat     @relation(fields: [chat_id], references: [id])
+  sender     Users     @relation(fields: [sender_id], references: [id])
+}
+
+model MatchUser {
+  id        Int      @id @default(autoincrement()) @map("match_user_id")
+  match_id  Int
+  user_id   Int
+  role      String   @db.VarChar(50)
+  match     Match    @relation(fields: [match_id], references: [id])
+  user      Users     @relation(fields: [user_id], references: [id])
+}
+
+model Team {
+  id            Int         @id @default(autoincrement()) @map("team_id")
+  team_name     String      @db.VarChar(50)
+  coach_id      Int?
+  xp            Int         @default(0)
+  rank          Int         @default(1)
+  coach         Users?       @relation(fields: [coach_id], references: [id])
+  team_users    TeamUser[]
+  team_matches  TeamMatch[]
+}
+
+model TeamUser {
+  id        Int      @id @default(autoincrement()) @map("team_user_id")
+  team_id   Int
+  user_id   Int
+  team      Team     @relation(fields: [team_id], references: [id])
+  user      Users     @relation(fields: [user_id], references: [id])
+}
+
+model TeamMatch {
+  id        Int      @id @default(autoincrement()) @map("team_match_id")
+  team_id   Int
+  match_id  Int
+  team      Team     @relation(fields: [team_id], references: [id])
+  match     Match    @relation(fields: [match_id], references: [id])
+}
+
+model GroupChat {
+  id           Int        @id @default(autoincrement()) @map("group_chat_id")
+  created_by   Int
+   // Will create a supabase function to update
+  created_at   DateTime
+  creator      Users       @relation("CreatedGroups", fields: [created_by], references: [id])
+  group_users  GroupUser[]
+}
+
+model GroupUser {
+  id             Int       @id @default(autoincrement()) @map("group_chat_user_id")
+  group_chat_id  Int
+  user_id        Int
+   // Will create a supabase function to update
+  joined_at      DateTime
+  group_chat     GroupChat @relation(fields: [group_chat_id], references: [id])
+  user           Users      @relation(fields: [user_id], references: [id])
+}
+
+model Leaderboard {
+  id        Int              @id @default(autoincrement()) @map("leaderboard_id")
+  location  String
+  sport_id  Int
+  sport     Sport            @relation(fields: [sport_id], references: [id])
+  leaderboard_users LeaderboardUser[]
+}
+
+model LeaderboardUser {
+  id             Int         @id @default(autoincrement()) @map("leaderboard_user_id")
+  leaderboard_id Int
+  user_id        Int
+  leaderboard    Leaderboard @relation(fields: [leaderboard_id], references: [id])
+  user           Users        @relation(fields: [user_id], references: [id])
 }
