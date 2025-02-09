@@ -19,7 +19,7 @@ def read_root():
 
 @app.get("/check-db")
 async def check_db():
-    users = await prisma.user.find_many()
+    users = await prisma.users.find_many()
     return users
 
 @app.get("/items/{item_id}")
