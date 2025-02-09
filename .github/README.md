@@ -20,8 +20,8 @@ Backend for PlayOn — DivaLopers AppCon Entry
 3. Start the app
 
    ```bash
-    cd ./app
-    uvicord main:app --reload # hot reload
+    uvicorn main:app --reload # hot reload
+    http://<host>/docs # for swagger 
    ```
 
 
