@@ -13,8 +13,11 @@ Backend for PlayOn — DivaLopers AppCon Entry
 2. Install dependencies
 
    ```bash
-   pip install -r requirements-dev.txt
+   python -m venv venv # virtualenv for dependencies
+   .venv\bin\activate # activate venv
    pip install -r requirements.txt
+   cd ./db
+   prisma generate
    ```
 
 3. Start the app
@@ -41,3 +44,4 @@ git commit -m "category: do something"
 git push origin HEAD
 ```
 Feel free to ask questions for conflicts.
+

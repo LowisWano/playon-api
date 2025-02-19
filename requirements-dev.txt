@@ -1,4 +1,0 @@
-pre-commit==4.0.1
-uvicorn==0.24.0
-pipreqs==0.4.13
-black==24.3.0
