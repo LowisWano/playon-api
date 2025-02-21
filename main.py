@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 from routers.group_chat_router import router as group_chat_router
 from test_routers import router
-from utils.google_auth import router as google_auth_router
+from routers.google_auth_router import router as google_auth_router
 
 app = FastAPI()
 
