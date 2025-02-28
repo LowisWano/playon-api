@@ -1,49 +1,62 @@
 from fastapi import WebSocket, APIRouter
-from fastapi.websockets import WebSocketDisconnect
-from config.ws_connection import ConnectionManager
+from config.ws_connection import *
 from services.chats.group_chat_services import *
-from pydantic import BaseModel
+from typing import List
+from services.socket_services import room_manager, RoomManagerPayload
 
-# stores here the rooms and users that are in the group chat
-# so that we can broadcast messages to the correct room
-# not yet implemented
-group_chat = []
+# id in GroupChat will be use for room id in websockets
 
-class CreateGroupChat(BaseModel):
-    created_by: int
-    title: str
+group_chat: List[ChatConnection] = []
+router = APIRouter(
+    prefix="/group-chat",
+    tags=["group-chat"]    
+)
 
-class CreateGroupUsers(BaseModel):
-    user_id: int
-    class Config:
-        orm_mode = True
+# @router.websocket("/ws/{room}/{client_id}")
+@router.websocket("/ws/{room}/{client_id}/{client_name}/{profile}")
+async def group_chat_websocket(websocket: WebSocket, room: int, client_id: int, client_name: str, profile: str):
+    payload = RoomManagerPayload(
+        room=room,
+        client_id=client_id,
+        client_name=client_name,
+        profile=profile,
+        room_type="group-chat",
+        chat_list=group_chat
+    )
+    await room_manager(payload, websocket)
 
-manager = ConnectionManager()
-router = APIRouter()
+@router.get("/users-gc/{user_id}")
+async def get_all_user_group_chats_endpoint(user_id: int):
+    data = await get_all_user_group_chats(user_id)
+    return data
 
-@router.websocket("/ws/group-chat/{room}/{client_id}")
-async def group_chat_websocket(websocket: WebSocket, room: str, client_id: int):
-    print(f"Connection from {websocket.headers.get('origin')}")
-    await manager.connect(websocket)
-    try:
-        while True:
-            data = await websocket.receive_text()
-            print(data)
-            await manager.broadcast(f"Client #{client_id} says: {data}, room: {room}") # test
-    except WebSocketDisconnect:
-        manager.disconnect(websocket)
-        await manager.broadcast(f"Client #{client_id} left the chat")
-
-@router.get("/group-chat/{group_id}")
+@router.get("/visit/{group_id}")
 async def get_group_chat_endpoint(group_id: int):
-    if group_id is None:
-        return BadRequestErrorResponse(error_message="Group ID is required").as_response()
     data = await get_group_chat_by_id(group_id);
-    if data is None:
-        return { "message": "Group Chat Doesn't Exists." }
     return data
 
 @router.post("/create-gc")
-async def create_group_chat_endpoint(payloadGC: CreateGroupChat, payloadGU: CreateGroupUsers):
-    data = await create_group_chat(payloadGC=payloadGC, payloadGU=payloadGU)
+async def create_group_chat_endpoint(payloadGC: CreateGroupChatDTO):
+    data = await create_group_chat(payloadGC)
     return data
+
+@router.patch("/group-chat/{gc_id}/{new_user_creator_id}")
+async def transfer_creator_role_endpoint(gc_id: int, new_user_creator_id: int):
+    data = await transfer_creator_role(gc_id, new_user_creator_id)
+    return data
+
+@router.delete("/kick-member/{group_member_id}")
+async def kick_group_chat_member(group_member_id: int):
+    data = kick_group_chat_member(group_member_id)
+    return data
+
+@router.delete("/delete-gc/{gc_id}")
+async def delete_group_chat(gc_id: int):
+    data = delete_group_chat(gc_id)
+    return data
+
+@router.delete("/leave-gc/{group_member_id}")
+async def leave_group_chat_endpoint(group_member_id: int):
+    data = await leave_group_chat(group_member_id)
+    return data
+

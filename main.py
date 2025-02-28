@@ -4,6 +4,7 @@ from db.prisma import prisma
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 from routers.group_chat_router import router as group_chat_router
+from routers.user_chat_router import router as user_chat_router
 from test_routers import router
 from routers.google_auth_router import router as google_auth_router
 
@@ -40,6 +41,7 @@ async def check_db():
 def configure_routers(app=app):
     app.get("/health-check")(lambda: {"Hello": "World"})
     app.include_router(group_chat_router)
+    app.include_router(user_chat_router)
     app.include_router(google_auth_router)
     app.include_router(router)      
 

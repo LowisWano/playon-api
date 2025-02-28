@@ -17,7 +17,6 @@ async def login_google():
 async def auth_google(code: str):
     tokens = await google_auth_service.get_tokens(code)
     access_token = tokens.get("access_token")
-    
     if access_token:
         user_info = await google_auth_service.get_user_info(access_token)
         return user_info
