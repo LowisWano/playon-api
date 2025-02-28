@@ -1,18 +1,17 @@
 from db.prisma import prisma
 from utils.http_error import *
-from pydantic import BaseModel
-from dto.chat_dto import *
+from services.chats.dto.chat_dto import *
 
 # id in GroupChat will be use for room id in websockets
 
-async def insert_to_messages(gc_id: int, user_id: int, content: str):
+async def send_message(payload: SendMessageDTO):
     await prisma.message.create(
         data={
-            'content': content,
-            'sender_id': user_id,
-            'group_chat_id': gc_id
+            'content': payload.content,
+            'sender_id': payload.sender_id,
+            'group_chat_id': payload.chat_id
         }
-    )
+    )    
 
 async def get_all_user_group_chats(user_id: int):
     return await prisma.groupuser.find_many(
@@ -41,7 +40,7 @@ async def get_group_chat_by_id(group_id: int):
     )
 
 
-async def create_group_chat(payloadGC: CreateGroupChatDTO, payloadGU: CreateGroupUsersDTO):
+async def create_group_chat(payloadGC: CreateGroupChatDTO):
     try:
         gc = await prisma.groupchat.create(
             data={
@@ -49,27 +48,26 @@ async def create_group_chat(payloadGC: CreateGroupChatDTO, payloadGU: CreateGrou
                 'title': payloadGC.title
             },
         )
-        # Add the first user (the creator) to the group
-        gu = await prisma.groupuser.create(
+        # add the first user (the creator) to the group
+        await prisma.groupuser.create(
             data={
                 'group_chat_id': gc.id,
-                'user_id': payloadGU.user_id
+                'user_id': payloadGC.created_by
             }
         )
+
+        createdGC = await get_group_chat_by_id(gc.id)
+
+        if createdGC is None:
+            raise BadRequestErrorResponse(error_message=str(e)).as_exception()
+        
+        return {
+            "data": createdGC,
+            "message": "Group Chat Created Successfully!"
+        }
     except Exception as e:
         raise BadRequestErrorResponse(error_message=str(e)).as_exception()
-
-    # Fetch the full details of the newly created group chat
-    createdGC = await get_group_chat_by_id(gc.id)
-
-    if createdGC is None:
-        raise BadRequestErrorResponse(error_message=str(e)).as_exception()
     
-    return {
-        "data": createdGC,
-        "message": "Group Chat Created Successfully!"
-    }
-
 
 # frontend will filter if admin or not to prevent leaving
 async def leave_group_chat(grp_member_id: int):

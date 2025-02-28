@@ -1,61 +1,29 @@
 from fastapi import WebSocket, APIRouter
-from fastapi.websockets import WebSocketDisconnect
-from config.ws_connection import ConnectionManager
+from config.ws_connection import *
 from services.chats.group_chat_services import *
-from typing import List, TypedDict 
-import json
+from typing import List
+from services.socket_services import room_manager, RoomManagerPayload
 
-# stores here the rooms and users that are in the group chat
-# so that we can broadcast messages to the correct room
-class GroupChatConnection(TypedDict):
-    room: int
-    client_id: int
-    websocket: WebSocket
-    
-group_chat: List[GroupChatConnection] = []
+# id in GroupChat will be use for room id in websockets
 
-manager = ConnectionManager()
-router = APIRouter(prefix="/group-chat")
+group_chat: List[ChatConnection] = []
+router = APIRouter(
+    prefix="/group-chat",
+    tags=["group-chat"]    
+)
 
+# @router.websocket("/ws/{room}/{client_id}")
 @router.websocket("/ws/{room}/{client_id}/{client_name}/{profile}")
-async def group_chat_websocket(websocket: WebSocket, room: int, client_id: int):
-    
-    await manager.connect(websocket)
-
-    # Check if the room exists, if not, initialize it
-    if not any(connection["room"] == room for connection in group_chat):
-        group_chat.append({
-            "room": room,
-            "client_id": client_id,
-            "websocket": websocket
-        })
-    else:
-        # If the room already exists, just append the new user
-        group_chat.append({
-            "room": room,
-            "client_id": client_id,
-            "websocket": websocket
-        })
-    
-    # Debug
-    print(f"Users in room {room}: {[user['client_id'] for user in group_chat if user['room'] == room]}")
-    
-    try:
-        while True:
-            data = await websocket.receive_text()
-            for user in group_chat:
-                if user["room"] == room:
-                    content = {
-                        "id": client_id,
-                        "profile": "HEY",
-                        "username": "test",
-                        "message": data
-                    }
-                    await insert_to_messages(room, client_id, data)
-                    await user["websocket"].send_text(json.dumps(content))
-    except WebSocketDisconnect:
-        # Remove the user from the room when they disconnect
-        group_chat[:] = [user for user in group_chat if not (user["room"] == room and user["client_id"] == client_id)]
+async def group_chat_websocket(websocket: WebSocket, room: int, client_id: int, client_name: str, profile: str):
+    payload = RoomManagerPayload(
+        room=room,
+        client_id=client_id,
+        client_name=client_name,
+        profile=profile,
+        room_type="group-chat",
+        chat_list=group_chat
+    )
+    await room_manager(payload, websocket)
 
 @router.get("/users-gc/{user_id}")
 async def get_all_user_group_chats_endpoint(user_id: int):
@@ -68,8 +36,8 @@ async def get_group_chat_endpoint(group_id: int):
     return data
 
 @router.post("/create-gc")
-async def create_group_chat_endpoint(payloadGC: CreateGroupChatDTO, payloadGU: CreateGroupUsersDTO):
-    data = await create_group_chat(payloadGC, payloadGU)
+async def create_group_chat_endpoint(payloadGC: CreateGroupChatDTO):
+    data = await create_group_chat(payloadGC)
     return data
 
 @router.patch("/group-chat/{gc_id}/{new_user_creator_id}")

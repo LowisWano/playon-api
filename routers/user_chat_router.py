@@ -1,33 +1,43 @@
 from fastapi import WebSocket, APIRouter
-from fastapi.websockets import WebSocketDisconnect
-from config.ws_connection import ConnectionManager
-from typing import List, TypedDict 
-import json
+from config.ws_connection import *
+from typing import List
+from services.chats.user_chat_services import *
+from services.socket_services import room_manager, RoomManagerPayload
 
-# stores here rooms with its users
-# so that we can broadcast messages to the correct room
-class UserChatConnection(TypedDict):
-    room: int
-    client_id: int
-    websocket: WebSocket
+user_chat: List[ChatConnection] = []
+router = APIRouter(
+    prefix="/user-chat",
+    tags=["user-chat"]    
+)
+
+# frontend will generate the room id if it doesnt exist ( no conversation yet )
+# and send to backend to insert the room id 
+# @router.websocket("/ws/{room}/{client_id}")
+@router.websocket("/ws/user-chat/{room}/{client_id}/{client_name}/{profile}")
+async def user_chat_websocket(websocket: WebSocket, room: int, client_id: int, client_name: str, profile: str):
+    payload = RoomManagerPayload(
+        room=room,
+        client_id=client_id,
+        client_name=client_name,
+        profile=profile,
+        room_type="user-chat",
+        chat_list=user_chat
+    )
+    await room_manager(payload, websocket)
+
+@router.get("/get-all-chatmate/{user_id}")
+async def get_all_chatmate_endpoint(user_id: int):
+    return await get_all_chatmate(user_id)
+
+@router.get("/get-chatmate/{user_chat_id}")
+async def get_chatmate_endpoint(user_chat_id: int):
+    return await get_chatmate(user_chat_id)
+
+@router.post("/create-conversation")
+async def create_conversation_endpoint(payload: CreateConversationDTO):
+    await create_conversation(payload)
     
-user_chat: List[UserChatConnection] = []
+@router.delete("/delete-message/{message_id}")
+async def soft_delete_message_endpoint(message_id: int):
+    return await soft_delete_message(message_id)
 
-manager = ConnectionManager()
-
-router = APIRouter()
-
-# @router.websocket("/ws/user-chat/{room}/{client_id}/{client_name}/{profile}")
-@router.websocket("/ws/user-chat/{room}/{client_id}")
-async def user_chat_websocket(websocket: WebSocket, room: str, client_id: int):
-    print(f"Connection from {websocket.headers.get('origin')}")
-    await manager.connect(websocket)
-    try:
-        while True:
-            data = await websocket.receive_text()
-            print(data)
-            await manager.broadcast(f"Client #{client_id} says: {data}, room: {room}") # test
-    except WebSocketDisconnect:
-        manager.disconnect(websocket)
-        await manager.broadcast(f"Client #{client_id} left the chat")
-    
