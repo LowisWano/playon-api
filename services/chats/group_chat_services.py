@@ -1,15 +1,24 @@
 from db.prisma import prisma
-from utils.http_error import *
+from utils.http_error import BadRequestErrorResponse
 from services.chats.dto.chat_dto import *
+from services.notification_services import notify_user, CreateNotifDTO
 
 # id in GroupChat will be use for room id in websockets
 
-async def send_message(payload: SendMessageDTO):
+async def send_message(payload: SendMessageDTO, gc_name: str):
+    await notify_user(
+        CreateNotifDTO(
+            user_id=payload.room_id,
+            message=f"New message from {gc_name}",
+            notif_type="Group Chat",
+            redirect_link=f"/group-chat/{payload.room_id}"
+        )
+    )
     await prisma.message.create(
         data={
             'content': payload.content,
             'sender_id': payload.sender_id,
-            'group_chat_id': payload.chat_id
+            'group_chat_id': payload.room_id
         }
     )    
 
@@ -39,6 +48,20 @@ async def get_group_chat_by_id(group_id: int):
         }
     )
 
+async def add_to_group_chat(p: AddToGroupChatDTO):
+    try:
+        autoAccept = not p.isAdmin;
+        await prisma.groupuser.create(
+            data={
+                'group_chat_id': p.group_id,
+                'user_id': p.user_id,
+                'isPending': autoAccept
+            }
+        )
+    except Exception as e:
+        raise BadRequestErrorResponse(error_message=str(e)).as_exception()
+    
+    
 
 async def create_group_chat(payloadGC: CreateGroupChatDTO):
     try:
@@ -68,22 +91,35 @@ async def create_group_chat(payloadGC: CreateGroupChatDTO):
     except Exception as e:
         raise BadRequestErrorResponse(error_message=str(e)).as_exception()
     
-
-# frontend will filter if admin or not to prevent leaving
-async def leave_group_chat(grp_member_id: int):
+    
+async def mute_groupchat_for_user(group_user_id: int):
     try:
-        await prisma.groupuser.delete(
+        await prisma.groupuser.update(
             where={
-                "id": grp_member_id
+                'id': group_user_id
+            },
+            data={
+                'isGcOnMute': True
             }
         )
-        return {
-            "message": "You left the group chat successfully!"
-        }
     except Exception as e:
         raise BadRequestErrorResponse(error_message=str(e)).as_exception()
     
     
+async def accept_user_to_gc(group_user: int):
+    try:
+        await prisma.groupuser.update(
+            where={
+                'id': group_user
+            },
+            data={
+                'isPending': False
+            }
+        )
+    except Exception as e:
+        raise BadRequestErrorResponse(error_message=str(e)).as_exception()
+
+
 async def transfer_creator_role(gc_id: int, new_user_creator_id: int):
     try:
         await prisma.groupchat.update(
@@ -99,7 +135,22 @@ async def transfer_creator_role(gc_id: int, new_user_creator_id: int):
         }
     except Exception as e:
         raise BadRequestErrorResponse(error_message=str(e)).as_exception()
+
   
+# frontend will filter if admin or not to prevent leaving
+async def leave_group_chat(grp_member_id: int):
+    try:
+        await prisma.groupuser.delete(
+            where={
+                "id": grp_member_id
+            }
+        )
+        return {
+            "message": "You left the group chat successfully!"
+        }
+    except Exception as e:
+        raise BadRequestErrorResponse(error_message=str(e)).as_exception()
+    
   
 # only admin can kick | filtered in FE
 async def kick_group_chat_member(grp_user_id: int):

@@ -35,7 +35,7 @@ async def get_chatmate_endpoint(user_chat_id: int):
 
 @router.post("/create-conversation")
 async def create_conversation_endpoint(payload: CreateConversationDTO):
-    await create_conversation(payload)
+    return await create_conversation(payload)
     
 @router.delete("/delete-message/{message_id}")
 async def soft_delete_message_endpoint(message_id: int):
