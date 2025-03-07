@@ -21,7 +21,6 @@ model Users {
   profile_pic     String
   rank            Int         @default(0)
   is_verified     Boolean     @default(false)
-  xp              Int         @default(0)
   role            String
   chats_sent      UserChat[]  @relation("SenderChats")
   chats_received  UserChat[]  @relation("ReceiverChats")
@@ -41,19 +40,6 @@ model Sport {
   matches     Match[]
 }
 
-model Match {
-  id            Int         @id @default(autoincrement()) @map("match_id")
-  sport_id      Int
-  location      String
-  start_time    DateTime    @default(now())
-  end_time      DateTime    @default(now())
-  skill_level   Int
-  match_type    String
-  accessibility Boolean
-  sport         Sport       @relation(fields: [sport_id], references: [id])
-  match_users   MatchUser[]
-  team_matches  TeamMatch[]
-}
 
 model UserChat {
   id          Int       @id @default(autoincrement()) @map("chat_id")
@@ -89,13 +75,30 @@ model GroupChat {
   messages     Message[]
 }
 
+
 model GroupUser {
   id            Int       @id @default(autoincrement()) @map("group_chat_user_id")
   group_chat_id Int
   user_id       Int
+  isPending     Boolean
+  isGcOnMute    Boolean   @default(false)
   joined_at     DateTime? @default(now())
   group_chat    GroupChat @relation(fields: [group_chat_id], references: [id])
   user          Users     @relation(fields: [user_id], references: [id])
+}
+
+model Match {
+  id            Int         @id @default(autoincrement()) @map("match_id")
+  sport_id      Int
+  location      String
+  start_time    DateTime    @default(now())
+  end_time      DateTime    @default(now())
+  skill_level   Int
+  match_type    String
+  accessibility Boolean
+  sport         Sport       @relation(fields: [sport_id], references: [id])
+  match_users   MatchUser[]
+  team_matches  TeamMatch[]
 }
 
 model MatchUser {
@@ -136,7 +139,8 @@ model TeamMatch {
 
 model Notifications {
   id            Int      @id @default(autoincrement()) @map("notification_id")
-  user_id       Int
+  notif_to_id   Int
+  notif_from_id Int
   message       String
   type          String
   redirect_link String

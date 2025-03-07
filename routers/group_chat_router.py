@@ -13,8 +13,8 @@ router = APIRouter(
 )
 
 # @router.websocket("/ws/{room}/{client_id}")
-@router.websocket("/ws/{room}/{client_id}/{client_name}/{profile}")
-async def group_chat_websocket(websocket: WebSocket, room: int, client_id: int, client_name: str, profile: str):
+@router.websocket("/ws/{room}/{gc_name}/{client_id}/{client_name}/{profile}")
+async def group_chat_websocket(websocket: WebSocket, room: int, gc_name: str, client_id: int, client_name: str, profile: str):
     payload = RoomManagerPayload(
         room=room,
         client_id=client_id,
@@ -23,40 +23,44 @@ async def group_chat_websocket(websocket: WebSocket, room: int, client_id: int, 
         room_type="group-chat",
         chat_list=group_chat
     )
-    await room_manager(payload, websocket)
+    await room_manager(payload, websocket, gc_name)
 
 @router.get("/users-gc/{user_id}")
 async def get_all_user_group_chats_endpoint(user_id: int):
-    data = await get_all_user_group_chats(user_id)
-    return data
+    return await get_all_user_group_chats(user_id)
 
 @router.get("/visit/{group_id}")
 async def get_group_chat_endpoint(group_id: int):
-    data = await get_group_chat_by_id(group_id);
-    return data
+    return await get_group_chat_by_id(group_id);
 
 @router.post("/create-gc")
 async def create_group_chat_endpoint(payloadGC: CreateGroupChatDTO):
-    data = await create_group_chat(payloadGC)
-    return data
+    return await create_group_chat(payloadGC)
+
+@router.post("/add-to-groupchat")
+async def add_to_group_chat_endpoint(payload: AddToGroupChatDTO):
+    return await add_to_group_chat(payload)
+
+@router.patch("/accept-user/{group_user}")
+async def accept_user_to_gc_endpoint(group_user: int):
+    return await accept_user_to_gc(group_user);
+
+@router.patch("/mute-gc/{group_user_id}")
+async def mute_groupchat_for_user_endpoint(group_user_id: int):
+    return await mute_groupchat_for_user(group_user_id);
 
 @router.patch("/group-chat/{gc_id}/{new_user_creator_id}")
 async def transfer_creator_role_endpoint(gc_id: int, new_user_creator_id: int):
-    data = await transfer_creator_role(gc_id, new_user_creator_id)
-    return data
+    return await transfer_creator_role(gc_id, new_user_creator_id)
 
 @router.delete("/kick-member/{group_member_id}")
 async def kick_group_chat_member(group_member_id: int):
-    data = kick_group_chat_member(group_member_id)
-    return data
+    return await kick_group_chat_member(group_member_id)
 
 @router.delete("/delete-gc/{gc_id}")
 async def delete_group_chat(gc_id: int):
-    data = delete_group_chat(gc_id)
-    return data
+    return await delete_group_chat(gc_id)
 
 @router.delete("/leave-gc/{group_member_id}")
 async def leave_group_chat_endpoint(group_member_id: int):
-    data = await leave_group_chat(group_member_id)
-    return data
-
+    return await leave_group_chat(group_member_id)

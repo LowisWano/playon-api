@@ -3,9 +3,14 @@ from pydantic import BaseModel
 class CreateGroupChatDTO(BaseModel):
     created_by: int
     title: str
+    
+class AddToGroupChatDTO(BaseModel):
+    user_id: int
+    group_id: int
+    isAdmin: bool
 
 class SendMessageDTO(BaseModel):
-    chat_id: int
+    room_id: int
     sender_id: int
     content: str
     

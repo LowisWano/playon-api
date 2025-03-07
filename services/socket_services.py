@@ -26,7 +26,7 @@ class RoomManagerPayload(TypedDict):
     room_type: str
     chat_list: List[ChatConnection]
 
-async def room_manager(p: RoomManagerPayload, websocket: WebSocket):
+async def room_manager(p: RoomManagerPayload, websocket: WebSocket, gc_name: str | None = None):
     await manager.connect(websocket)
 
     # check if the room exists, initialize it if not
@@ -52,7 +52,7 @@ async def room_manager(p: RoomManagerPayload, websocket: WebSocket):
             print(data)
 
             content: ChatContent = {
-                "id": p["client_id"],
+                "client_id": p["client_id"],
                 "profile": p["profile"],
                 "username": p["client_name"],
                 "message": data,
@@ -60,7 +60,7 @@ async def room_manager(p: RoomManagerPayload, websocket: WebSocket):
             }
             
             broadcast_data = {
-                "id": content["id"],
+                "client_id": content["client_id"],
                 "profile": content["profile"],
                 "username": content["username"],
                 "message": content["message"]
@@ -72,13 +72,13 @@ async def room_manager(p: RoomManagerPayload, websocket: WebSocket):
                     await user["websocket"].send_text(json.dumps(broadcast_data))
 
             message_payload = SendMessageDTO(
-                chat_id=p["room"],
-                sender_id=content["id"],
+                room_id=p["room"],
+                sender_id=content["client_id"],
                 content=content["message"]
             )
 
             if p["room_type"] == "group-chat":
-                await send_message_group_chat(message_payload)
+                await send_message_group_chat(message_payload, gc_name)
             elif p["room_type"] == "user-chat":
                 await send_message_user_chat(message_payload)
 

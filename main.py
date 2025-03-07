@@ -28,15 +28,17 @@ async def shutdown():
 
 @app.get("/check-db")
 async def check_db():
-    users = await prisma.userchat.find_many(
-        include={
-            "messages": True,
-            "sender": True,
-            "receiver": True
-        }
-    )
-    return users
-
+    try:
+        users = await prisma.userchat.find_many(
+            include={
+                "messages": True,
+                "sender": True,
+                "receiver": True
+            }
+        )
+        return users
+    except Exception as e:
+        raise BadRequestErrorResponse(error_message=str(e)).as_exception()
 
 def configure_routers(app=app):
     app.get("/health-check")(lambda: {"Hello": "World"})
