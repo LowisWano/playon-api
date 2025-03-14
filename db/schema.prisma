@@ -60,7 +60,7 @@ model ReadMessage{
   sent_to_id    Int
   message_id    Int
   is_read       Boolean     @default(false)
-  read_at       DateTime    @default(now())
+  read_at       DateTime?
   sent_to       Users       @relation(fields: [sent_to_id], references: [id])
   message       Message     @relation(fields: [message_id], references: [id])
 }
