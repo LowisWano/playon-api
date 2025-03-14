@@ -82,7 +82,7 @@ model Message {
 model GroupChat {
   id           Int         @id @default(autoincrement()) @map("group_chat_id")
   created_by   Int
-  title        String
+  gc_name      String
   group_pic    String?
   created_at   DateTime?   @default(now())
   creator      Users       @relation("CreatedGroups", fields: [created_by], references: [id])
@@ -94,8 +94,8 @@ model GroupUser {
   id            Int       @id @default(autoincrement()) @map("group_chat_user_id")
   group_chat_id Int
   user_id       Int
-  isPending     Boolean
-  isGcOnMute    Boolean   @default(false)
+  is_pending    Boolean
+  is_on_mute    Boolean   @default(false)
   joined_at     DateTime? @default(now())
   group_chat    GroupChat @relation(fields: [group_chat_id], references: [id])
   user          Users     @relation(fields: [user_id], references: [id])
