@@ -2,35 +2,55 @@ from db.prisma import prisma
 from utils.http_error import BadRequestErrorResponse
 from services.chats.dto.chat_dto import *
 from services.notification_services import notify_user, CreateNotifDTO
+from typing import TypedDict
 
 # id in GroupChat will be use for room id in websockets
 
 async def send_message(payload: SendMessageDTO, gc_name: str):
-    await notify_user(
-        CreateNotifDTO(
-            user_id=payload.room_id,
-            message=f"New message from {gc_name}",
-            notif_type="Group Chat",
-            redirect_link=f"/group-chat/{payload.room_id}"
+    try:
+        msg_id = await prisma.message.create(
+            data={
+                'content': payload.content,
+                'sender_id': payload.sender_id,
+                'group_chat_id': payload.room_id
+            }
+        )    
+        await notify_user(
+            CreateNotifDTO(
+                user_id=payload.room_id,
+                message=f"New message from {gc_name}",
+                notif_type="Group Chat",
+                redirect_link=f"/group-chat/{payload.room_id}"
+            ),
+            msg_id=msg_id.id
         )
-    )
-    await prisma.message.create(
-        data={
-            'content': payload.content,
-            'sender_id': payload.sender_id,
-            'group_chat_id': payload.room_id
-        }
-    )    
+    except Exception as e:
+        raise BadRequestErrorResponse(error_message=str(e)).as_exception()
 
-async def get_all_user_group_chats(user_id: int):
-    return await prisma.groupuser.find_many(
+
+async def get_all_user_group_chats(user_id: int):    
+    group_chats = await prisma.groupuser.find_many(
         where={
             "user_id": user_id
         },
         include={
-            "group_chat": True
+            "group_chat": {
+                "include": {
+                    "messages": {
+                        "take": 1,
+                        "orderBy": {
+                            "sent_at": "desc"
+                        },
+                        "include": {
+                            "read_messages": True
+                        }
+                    }
+                },
+            },
         }
     )
+    return group_chats
+
 
 
 async def get_group_chat_by_id(group_id: int):
@@ -68,7 +88,8 @@ async def create_group_chat(payloadGC: CreateGroupChatDTO):
         gc = await prisma.groupchat.create(
             data={
                 'created_by': payloadGC.created_by,
-                'title': payloadGC.title
+                'gc_name': payloadGC.gc_name,
+                'group_pic': payloadGC.image
             },
         )
         # add the first user (the creator) to the group

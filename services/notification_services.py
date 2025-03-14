@@ -12,7 +12,7 @@ async def get_all_notifications(user_id: int):
         }
     )
 
-async def notify_user(p: CreateNotifDTO):
+async def notify_user(p: CreateNotifDTO, msg_id: int = None):
     try:
         if p.notif_type == "Group Chat":
             gcMembers = await prisma.groupuser.find_many(
@@ -29,6 +29,12 @@ async def notify_user(p: CreateNotifDTO):
                         "message": p.message,
                         "type": p.notif_type,
                         "redirect_link": p.redirect_link
+                    }
+                )
+                await prisma.readmessage.create(
+                    data={
+                        "sent_to_id": members.user_id,
+                        "message_id": msg_id
                     }
                 )
             return

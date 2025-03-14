@@ -25,6 +25,7 @@ Backend for PlayOn — DivaLopers AppCon Entry
    ```bash
     uvicorn main:app --reload # hot reload
     http://<host>/docs # for swagger 
+    uvicorn main:app --host 0.0.0.0 --port 8000 # if ur using expo-go
    ```
 
 
