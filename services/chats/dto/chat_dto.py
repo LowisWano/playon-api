@@ -2,7 +2,8 @@ from pydantic import BaseModel
 
 class CreateGroupChatDTO(BaseModel):
     created_by: int
-    title: str
+    gc_name: str
+    image: str
     
 class AddToGroupChatDTO(BaseModel):
     user_id: int

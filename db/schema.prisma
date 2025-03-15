@@ -30,6 +30,9 @@ model Users {
   team_users      TeamUser[]
   group_users     GroupUser[]
   created_groups  GroupChat[] @relation("CreatedGroups")
+  teams_leader    Team[]      @relation("LeaderOfTeam")
+  notifications   Notifications[]
+  read_messages   ReadMessage[]
 }
 
 model Sport {
@@ -52,6 +55,16 @@ model UserChat {
   messages    Message[]
 }
 
+model ReadMessage{
+  id            Int         @id @default(autoincrement()) @map("read_message_id")
+  sent_to_id    Int
+  message_id    Int
+  is_read       Boolean     @default(false)
+  read_at       DateTime?
+  sent_to       Users       @relation(fields: [sent_to_id], references: [id])
+  message       Message     @relation(fields: [message_id], references: [id])
+}
+
 model Message {
   id            Int         @id @default(autoincrement()) @map("message_id")
   user_chat_id  Int?
@@ -63,25 +76,26 @@ model Message {
   chat          UserChat?   @relation(fields: [user_chat_id], references: [id])
   sender        Users       @relation(fields: [sender_id], references: [id])
   group_chat    GroupChat?  @relation(fields: [group_chat_id], references: [id])
+  read_messages ReadMessage[]
 }
 
 model GroupChat {
   id           Int         @id @default(autoincrement()) @map("group_chat_id")
   created_by   Int
-  title        String
+  gc_name      String
+  group_pic    String?
   created_at   DateTime?   @default(now())
   creator      Users       @relation("CreatedGroups", fields: [created_by], references: [id])
   group_users  GroupUser[]
   messages     Message[]
 }
 
-
 model GroupUser {
   id            Int       @id @default(autoincrement()) @map("group_chat_user_id")
   group_chat_id Int
   user_id       Int
-  isPending     Boolean
-  isGcOnMute    Boolean   @default(false)
+  is_pending    Boolean
+  is_on_mute    Boolean   @default(false)
   joined_at     DateTime? @default(now())
   group_chat    GroupChat @relation(fields: [group_chat_id], references: [id])
   user          Users     @relation(fields: [user_id], references: [id])
@@ -116,6 +130,8 @@ model Team {
   coach_id     Int?
   xp           Int         @default(0)
   rank         Int         @default(1)
+  leader_id    Int
+  leader       Users       @relation("LeaderOfTeam", fields: [leader_id], references: [id])
   coach        Users?      @relation(fields: [coach_id], references: [id])
   team_users   TeamUser[]
   team_matches TeamMatch[]
@@ -140,9 +156,11 @@ model TeamMatch {
 model Notifications {
   id            Int      @id @default(autoincrement()) @map("notification_id")
   notif_to_id   Int
-  notif_from_id Int
+  // notif from can be id of match, team, user, group
+  notif_from_id Int?
   message       String
   type          String
-  redirect_link String
+  redirect_link String?
   notified_at   DateTime @default(now())
+  notif_to      Users    @relation(fields: [notif_to_id], references: [id])
 }

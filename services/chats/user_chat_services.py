@@ -5,25 +5,36 @@ from services.notification_services import notify_user, CreateNotifDTO
 
 
 async def send_message(payload: SendMessageDTO):
-    await notify_user(
-        CreateNotifDTO(
-            user_id=payload.sender_id,
-            message=f"New message from {payload.sender_name}",
-            notif_type="User Chat",
-            redirect_link=f"/user-chat/{payload.room_id}"
+    try:
+        msg_id = await notify_user(
+            CreateNotifDTO(
+                user_id=payload.sender_id,
+                message=f"New message from {payload.sender_name}",
+                notif_type="User Chat",
+                redirect_link=f"/user-chat/{payload.room_id}"
+            )
         )
-    )
-    await prisma.message.create(
-        data={
-            'content': payload.content,
-            'sender_id': payload.sender_id,
-            'user_chat_id': payload.room_id
-        }
-    )
-    
+        
+        await prisma.readmessage.create(
+            data={
+                "sent_to_id": payload.room_id,
+                "message_id": msg_id.id
+            }
+        )
+        
+        await prisma.message.create(
+            data={
+                'content': payload.content,
+                'sender_id': payload.sender_id,
+                'user_chat_id': payload.room_id
+            }
+        )
+    except Exception as e:
+        raise BadRequestErrorResponse(error_message=str(e)).as_exception()
+
 
 async def get_all_chatmate(user_id: int):
-    return await prisma.userchat.find_many(
+    chatmates = await prisma.userchat.find_many(
         where={
             "OR": [
                 {"sender_id": user_id},
@@ -35,9 +46,20 @@ async def get_all_chatmate(user_id: int):
         # let frontend do this
         include={
             "sender": True, 
-            "receiver": True
+            "receiver": True,
+            "messages": {
+                "take": 1,
+                "orderBy": {
+                    "sent_at": "desc"
+                },
+                "include": {
+                    "read_messages": True
+                }
+            },
         }
     )
+    return chatmates
+
 
     
 async def get_chatmate(user_chat_id):
