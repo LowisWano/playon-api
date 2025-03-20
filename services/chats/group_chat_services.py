@@ -59,7 +59,11 @@ async def get_group_chat_by_id(group_id: int):
             "id": group_id
         },
         include = {
-            "messages": True,
+            "messages": {
+                "include": {
+                    "read_messages": True
+                }
+            },
             "group_users": {
                 "include": {
                     "user": True

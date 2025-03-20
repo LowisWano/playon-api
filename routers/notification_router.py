@@ -7,12 +7,6 @@ router = APIRouter(
     tags=["notification"]    
 )
 
-# Notif Type
-# - Group-Chat
-# - User-Chat
-# - Team
-# - Match
-
 class CreateNotifDTO(BaseModel):
     notif_to_id: int
     notif_from_id: int

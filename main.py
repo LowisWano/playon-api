@@ -8,8 +8,6 @@ from routers.chats.user_chat_router import router as user_chat_router
 from test_routers import router
 from routers.google_auth_router import router as google_auth_router
 from routers.chats.read_message_router import router as read_message_router
-from routers.teams.team_match_router import router as team_match_router
-from routers.teams.team_router import router as team_router
 from routers.sports_router import router as sports_router
 
 app = FastAPI()
@@ -47,8 +45,6 @@ def configure_routers(app=app):
     app.include_router(group_chat_router)
     app.include_router(user_chat_router)
     app.include_router(read_message_router)
-    app.include_router(team_match_router)
-    app.include_router(team_router)
     app.include_router(sports_router)
     app.include_router(google_auth_router)
     app.include_router(router)      

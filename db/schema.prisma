@@ -12,27 +12,85 @@ generator client {
   previewFeatures      = ["relationJoins"]
 }
 
+enum Gender {
+    MALE
+    FEMALE
+    OTHER
+}
+
+enum SkillLevel {
+    BEGINNER
+    INTERMEDIATE
+    ADVANCED
+    PRO
+}
+
+enum NotificationType {
+    MATCH
+    DIRECT_CHAT
+    GROUP_CHAT
+}
+
+// ================ All in One Route/Service ================
 model Users {
   id              Int         @id @default(autoincrement()) @map("user_id")
-  username        String      @db.VarChar(20)
-  email           String      @db.VarChar(50)
+  user_info_id    Int         @unique
+  email           String      @db.VarChar(50) @unique
   password        String
-  location        String
-  profile_pic     String
-  rank            Int         @default(0)
-  is_verified     Boolean     @default(false)
-  role            String
+  provider_id     Int
   chats_sent      UserChat[]  @relation("SenderChats")
   chats_received  UserChat[]  @relation("ReceiverChats")
-  messages        Message[]
-  match_users     MatchUser[]
-  teams           Team[]
-  team_users      TeamUser[]
-  group_users     GroupUser[]
+  messages        Message[]  
+  match_users     MatchUser[]  
+  group_users     GroupUser[] 
   created_groups  GroupChat[] @relation("CreatedGroups")
-  teams_leader    Team[]      @relation("LeaderOfTeam")
-  notifications   Notifications[]
-  read_messages   ReadMessage[]
+  notifications   Notifications[] 
+  read_messages   ReadMessage[] 
+  reviews_given   UserReviews[] @relation("GivenReviews")
+  reviews_received UserReviews[] @relation("ReceivedReviews")
+  user_info        UserInfo?    @relation(fields: [user_info_id], references: [id])
+}
+
+model UserInfo {
+  id                Int         @id @default(autoincrement()) @map("user_info_id")
+  first_name        String
+  last_name         String
+  birth_date        DateTime
+  gender            Gender
+  bio               String
+  profile_pic       String
+  is_verified       Boolean     @default(false)
+  preferred_sports  Int[]
+  created_at        DateTime    @default(now())
+  user_location_id  Int
+  user_location     UserLocation @relation(fields: [user_location_id], references: [id])
+  user              Users?
+}
+
+
+model UserLocation {
+  id            Int       @id @default(autoincrement()) @map("user_location_id")
+  location      String
+  location_lat  Float
+  location_long Float
+  user_info     UserInfo[]
+}
+// ================ All in One Route/Service ================
+
+
+
+
+model UserReviews {
+  id             Int      @id @default(autoincrement()) @map("team_id")
+  reviewed_to_id Int
+  reviewed_by_id Int
+  rating         Int      @db.SmallInt
+  message        String
+  match_id       Int
+  reviewed_at    DateTime @default(now())
+  reviewed_to    Users    @relation("ReceivedReviews", fields: [reviewed_to_id], references: [id], onDelete: Cascade)
+  reviewed_by    Users    @relation("GivenReviews", fields: [reviewed_by_id], references: [id], onDelete: Cascade)
+  match          Match    @relation(fields: [match_id], references: [id], onDelete: Cascade)
 }
 
 model Sport {
@@ -46,12 +104,12 @@ model Sport {
 
 model UserChat {
   id          Int       @id @default(autoincrement()) @map("chat_id")
-  sender_id   Int
-  receiver_id Int
+  member1_id  Int
+  member2_id  Int
   room_id     String
   created_at  DateTime  @default(now())
-  sender      Users     @relation("SenderChats", fields: [sender_id], references: [id])
-  receiver    Users     @relation("ReceiverChats", fields: [receiver_id], references: [id])
+  member1     Users     @relation("SenderChats", fields: [member1_id], references: [id], onDelete: Cascade)
+  member2     Users     @relation("ReceiverChats", fields: [member2_id], references: [id], onDelete: Cascade)
   messages    Message[]
 }
 
@@ -61,8 +119,8 @@ model ReadMessage{
   message_id    Int
   is_read       Boolean     @default(false)
   read_at       DateTime?
-  sent_to       Users       @relation(fields: [sent_to_id], references: [id])
-  message       Message     @relation(fields: [message_id], references: [id])
+  sent_to       Users       @relation(fields: [sent_to_id], references: [id], onDelete: Cascade)
+  message       Message     @relation(fields: [message_id], references: [id], onDelete: Cascade)
 }
 
 model Message {
@@ -73,9 +131,9 @@ model Message {
   group_chat_id Int?
   is_deleted    Boolean     @default(false)
   sent_at       DateTime    @default(now())
-  chat          UserChat?   @relation(fields: [user_chat_id], references: [id])
-  sender        Users       @relation(fields: [sender_id], references: [id])
-  group_chat    GroupChat?  @relation(fields: [group_chat_id], references: [id])
+  chat          UserChat?   @relation(fields: [user_chat_id], references: [id], onDelete: Cascade)
+  sender        Users       @relation(fields: [sender_id], references: [id], onDelete: Cascade)
+  group_chat    GroupChat?  @relation(fields: [group_chat_id], references: [id], onDelete: Cascade)
   read_messages ReadMessage[]
 }
 
@@ -85,7 +143,7 @@ model GroupChat {
   gc_name      String
   group_pic    String?
   created_at   DateTime?   @default(now())
-  creator      Users       @relation("CreatedGroups", fields: [created_by], references: [id])
+  creator      Users       @relation("CreatedGroups", fields: [created_by], references: [id], onDelete: Cascade)
   group_users  GroupUser[]
   messages     Message[]
 }
@@ -97,60 +155,37 @@ model GroupUser {
   is_pending    Boolean
   is_on_mute    Boolean   @default(false)
   joined_at     DateTime? @default(now())
-  group_chat    GroupChat @relation(fields: [group_chat_id], references: [id])
-  user          Users     @relation(fields: [user_id], references: [id])
+  group_chat    GroupChat @relation(fields: [group_chat_id], references: [id], onDelete: Cascade)
+  user          Users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
 
 model Match {
-  id            Int         @id @default(autoincrement()) @map("match_id")
-  sport_id      Int
-  location      String
-  start_time    DateTime    @default(now())
-  end_time      DateTime    @default(now())
-  skill_level   Int
-  match_type    String
-  accessibility Boolean
-  sport         Sport       @relation(fields: [sport_id], references: [id])
-  match_users   MatchUser[]
-  team_matches  TeamMatch[]
+  id                  Int         @id @default(autoincrement()) @map("match_id")
+  sport_id            Int
+  user_id             Int
+  description         String
+  location            String
+  location_lat        Float
+  location_long       Float
+  match_start_date    DateTime
+  match_end_date      DateTime
+  gender_preference   Gender
+  skill_level         SkillLevel
+  created_at          DateTime    @default(now())
+  updated_at          DateTime
+  sport               Sport       @relation(fields: [sport_id], references: [id], onDelete: Cascade)
+  match_users         MatchUser[]
+  reviews             UserReviews[]
 }
 
 model MatchUser {
   id        Int      @id @default(autoincrement()) @map("match_user_id")
   match_id  Int
   user_id   Int
-  role      String   @db.VarChar(50)
-  match     Match    @relation(fields: [match_id], references: [id])
-  user      Users    @relation(fields: [user_id], references: [id])
-}
-
-model Team {
-  id           Int         @id @default(autoincrement()) @map("team_id")
-  team_name    String      @db.VarChar(50)
-  coach_id     Int?
-  xp           Int         @default(0)
-  rank         Int         @default(1)
-  leader_id    Int
-  leader       Users       @relation("LeaderOfTeam", fields: [leader_id], references: [id])
-  coach        Users?      @relation(fields: [coach_id], references: [id])
-  team_users   TeamUser[]
-  team_matches TeamMatch[]
-}
-
-model TeamUser {
-  id      Int   @id @default(autoincrement()) @map("team_user_id")
-  team_id Int
-  user_id Int
-  team    Team  @relation(fields: [team_id], references: [id])
-  user    Users @relation(fields: [user_id], references: [id])
-}
-
-model TeamMatch {
-  id       Int   @id @default(autoincrement()) @map("team_match_id")
-  team_id  Int
-  match_id Int
-  team     Team  @relation(fields: [team_id], references: [id])
-  match    Match @relation(fields: [match_id], references: [id])
+  attended  Boolean? // Null first and will be updated to true or false after match
+  is_host   Boolean  @default(false)
+  match     Match    @relation(fields: [match_id], references: [id], onDelete: Cascade)
+  user      Users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
 
 model Notifications {
@@ -159,8 +194,8 @@ model Notifications {
   // notif from can be id of match, team, user, group
   notif_from_id Int?
   message       String
-  type          String
+  type          NotificationType
   redirect_link String?
   notified_at   DateTime @default(now())
-  notif_to      Users    @relation(fields: [notif_to_id], references: [id])
+  notif_to      Users    @relation(fields: [notif_to_id], references: [id], onDelete: Cascade)
 }
