@@ -14,7 +14,6 @@ async def send_message(payload: SendMessageDTO):
                 redirect_link=f"/user-chat/{payload.room_id}"
             )
         )
-        
         await prisma.readmessage.create(
             data={
                 "sent_to_id": payload.room_id,
@@ -37,16 +36,14 @@ async def get_all_chatmate(user_id: int):
     chatmates = await prisma.userchat.find_many(
         where={
             "OR": [
-                {"sender_id": user_id},
-                {"receiver_id": user_id}
+                {"member1_id": user_id},
+                {"member2_id": user_id}
             ]
         },
         # Prisma in Python Doesnt have selecting a specific column and
         # selecting a relationship if sender/receiver is equal to userid
         # let frontend do this
         include={
-            "sender": True, 
-            "receiver": True,
             "messages": {
                 "take": 1,
                 "orderBy": {
@@ -56,6 +53,8 @@ async def get_all_chatmate(user_id: int):
                     "read_messages": True
                 }
             },
+            "member1": True,
+            "member2": True
         }
     )
     return chatmates
@@ -63,9 +62,18 @@ async def get_all_chatmate(user_id: int):
 
     
 async def get_chatmate(user_chat_id):
-    return await prisma.message.find_many(
+    return await prisma.userchat.find_many(
         where={
-            "user_chat_id": user_chat_id
+            "id": user_chat_id
+        },
+        include={
+            "messages": {
+                "include": {
+                    "read_messages": True
+                }
+            },
+            "member1": True,
+            "member2": True
         }
     )
     
@@ -75,15 +83,8 @@ async def create_conversation(payload: CreateConversationDTO):
     try:
         await prisma.userchat.create(
             data={
-                'sender_id': payload.sender_id,
-                'receiver_id': payload.receiver_id,
-                'room_id': payload.room_id
-            }
-        )
-        await prisma.userchat.create(
-            data={
-                'sender_id': payload.receiver_id,
-                'receiver_id': payload.sender_id,
+                'member1_id': payload.sender_id,
+                'member2_id': payload.receiver_id,
                 'room_id': payload.room_id
             }
         )
