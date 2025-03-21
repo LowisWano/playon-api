@@ -33,6 +33,10 @@ async def verify(
 
     Returns:
         dict: A dictionary containing the face verification results for each target image.
+            - image (str): The path to the image that was verified.
+            - verified (bool): Whether the image was verified as a match.
+            - distance (float): The facial recognition distance between the images.
+            - threshold (float): The threshold for verification.    
 
     Raises:
         HTTPException: If any error occurs during the file processing or face verification.
@@ -63,7 +67,7 @@ async def verify(
             image_paths.append(file_path)
 
         # Run face verification asynchronously
-        results = await face_verification(*image_paths)
+        results = await face_verification(image_paths[-1], *image_paths[:-1])
         return {"results": results}
 
     except Exception as e:
