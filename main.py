@@ -10,6 +10,7 @@ from routers.google_auth_router import router as google_auth_router
 from routers.app_auth_router import router as app_auth_router
 from routers.chats.read_message_router import router as read_message_router
 from routers.sports_router import router as sports_router
+from routers.recommender_router import router as recommender_router
 
 app = FastAPI()
 
@@ -43,6 +44,7 @@ async def check_db():
 
 def configure_routers(app=app):
     app.get("/health-check")(lambda: {"Hello": "World"})
+    app.include_router(recommender_router)
     app.include_router(group_chat_router)
     app.include_router(user_chat_router)
     app.include_router(read_message_router)
