@@ -9,26 +9,6 @@ router = APIRouter(
 
 
 """
-Utility Functions for the Recommender health check
-"""
-@router.get("/test")
-async def test():
-    return await test_recommender()
-
-
-@router.get("/test-fetch")
-async def test_fetch():
-    result = await fetch_data()
-    return {"result": result}
-
-
-@router.get("/test-preprocess")
-async def test_fetch():
-    result = await load_data()
-    return {"result": result}
-
-
-"""
 Collaborative Filtering Based Recommendation Endpoint
 """
 @router.get("/get-recommendations/{user_id}")
@@ -62,7 +42,8 @@ async def get_recommendations(user_id: int, max_distance: int = 50):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
+
+
 """
 Simple Recommender Endpoints
 """
