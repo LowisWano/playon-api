@@ -37,7 +37,7 @@ model Users {
   user_info_id    Int         @unique
   email           String      @db.VarChar(50) @unique
   password        String
-  provider_id     Int
+  provider_id     String?      @db.VarChar(255) @unique
   chats_sent      UserChat[]  @relation("SenderChats")
   chats_received  UserChat[]  @relation("ReceiverChats")
   messages        Message[]  
