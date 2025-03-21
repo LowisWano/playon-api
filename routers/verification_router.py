@@ -1,17 +1,17 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File
 import os
 import shutil
-from utils.face_verify_utils import face_verification
+from utils.verification_utils import *
 
 router = APIRouter(
-    prefix="/verification/face",
+    prefix="/verification",
     tags=["verification"]
 )
 
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-@router.post("/verify")
+@router.post("/verify-face")
 async def verify(
     img1: UploadFile = File(...), 
     img2: UploadFile = File(...), 
