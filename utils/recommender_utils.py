@@ -119,7 +119,7 @@ async def recommend_matches_by_preferences(user_id, max_distance=50):
     """
     user = await prisma.users.find_unique(where={"id": user_id})
     if not user:
-        return Non
+        return None
     
     matches = await prisma.match.find_many(
         where={
