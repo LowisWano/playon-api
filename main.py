@@ -7,6 +7,7 @@ from routers.chats.group_chat_router import router as group_chat_router
 from routers.chats.user_chat_router import router as user_chat_router
 from test_routers import router
 from routers.google_auth_router import router as google_auth_router
+from routers.app_auth_router import router as app_auth_router
 from routers.chats.read_message_router import router as read_message_router
 from routers.sports_router import router as sports_router
 from routers.recommender_router import router as recommender_router
@@ -49,6 +50,7 @@ def configure_routers(app=app):
     app.include_router(read_message_router)
     app.include_router(sports_router)
     app.include_router(google_auth_router)
+    app.include_router(app_auth_router)
     app.include_router(router)      
 
 configure_routers()
