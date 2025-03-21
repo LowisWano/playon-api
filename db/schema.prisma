@@ -33,51 +33,34 @@ enum NotificationType {
 
 // ================ All in One Route/Service ================
 model Users {
-  id              Int         @id @default(autoincrement()) @map("user_id")
-  user_info_id    Int         @unique
-  email           String      @db.VarChar(50) @unique
-  password        String
-  provider_id     String?      @db.VarChar(255) @unique
-  chats_sent      UserChat[]  @relation("SenderChats")
-  chats_received  UserChat[]  @relation("ReceiverChats")
-  messages        Message[]  
-  match_users     MatchUser[]  
-  group_users     GroupUser[] 
-  created_groups  GroupChat[] @relation("CreatedGroups")
-  notifications   Notifications[] 
-  read_messages   ReadMessage[] 
-  reviews_given   UserReviews[] @relation("GivenReviews")
-  reviews_received UserReviews[] @relation("ReceivedReviews")
-  user_info        UserInfo?    @relation(fields: [user_info_id], references: [id])
-}
-
-model UserInfo {
-  id                Int         @id @default(autoincrement()) @map("user_info_id")
+  id                Int             @id @default(autoincrement()) @map("user_id")
+  email             String          @db.VarChar(50) @unique
+  password          String
+  provider_id       String?         @db.VarChar(255) @unique
+  chats_sent        UserChat[]      @relation("SenderChats")
+  chats_received    UserChat[]      @relation("ReceiverChats")
+  messages          Message[]  
+  match_users       MatchUser[]  
+  group_users       GroupUser[] 
+  created_groups    GroupChat[]     @relation("CreatedGroups")
+  notifications     Notifications[] 
+  read_messages     ReadMessage[] 
+  reviews_given     UserReviews[]   @relation("GivenReviews")
+  reviews_received  UserReviews[]   @relation("ReceivedReviews")
   first_name        String
   last_name         String
   birth_date        DateTime
   gender            Gender
   bio               String
   profile_pic       String
-  is_verified       Boolean     @default(false)
+  is_verified       Boolean         @default(false)
   preferred_sports  Int[]
-  created_at        DateTime    @default(now())
-  user_location_id  Int
-  user_location     UserLocation @relation(fields: [user_location_id], references: [id])
-  user              Users?
-}
-
-
-model UserLocation {
-  id            Int       @id @default(autoincrement()) @map("user_location_id")
-  location      String
-  location_lat  Float
-  location_long Float
-  user_info     UserInfo[]
+  created_at        DateTime        @default(now())
+  location          String
+  location_lat      Float
+  location_long     Float
 }
 // ================ All in One Route/Service ================
-
-
 
 
 model UserReviews {
