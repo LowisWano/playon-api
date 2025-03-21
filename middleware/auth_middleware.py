@@ -3,12 +3,11 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 import os
 from dotenv import load_dotenv
-from prisma import Prisma
+from db.prisma import prisma  # Use the singleton instance instead
 
 load_dotenv()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-prisma = Prisma()
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
@@ -23,9 +22,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         if user_id is None:
             raise credentials_exception
         
-        await prisma.connect()
         user = await prisma.users.find_unique(where={"id": user_id})
-        await prisma.disconnect()
         
         if user is None:
             raise credentials_exception
