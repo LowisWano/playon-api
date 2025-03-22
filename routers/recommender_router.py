@@ -1,48 +1,10 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
 from utils.recommender_utils import *
 
 router = APIRouter(
     prefix="/recommender",
     tags=["recommender"]
 )
-
-
-"""
-Collaborative Filtering Based Recommendation Endpoint
-"""
-@router.get("/get-recommendations/{user_id}")
-async def get_recommendations(user_id: int, max_distance: int = 50):
-    """
-    Get personalized match recommendations for a use, based on the history of interactions.
-    
-    Parameters:
-    - user_id: The ID of the user
-    - max_distance: Maximum distance in kilometers for match recommendations (default: 50)
-    
-    Returns:
-    - List of recommended matches with their details and predicted scores
-    """
-    try:
-        recommendations = await recommend_matches(
-            user_id=user_id,
-            max_distance=max_distance,
-            top_n=8,
-        )
-        
-        if not recommendations:
-            raise HTTPException(
-                status_code=404,
-                detail="No recommendations found for this user"
-            )
-            
-        return recommendations
-        
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
 
 """
 Simple Recommender Endpoints
