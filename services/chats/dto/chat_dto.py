@@ -9,10 +9,12 @@ class AddToGroupChatDTO(BaseModel):
     user_id: int
     group_id: int
     isAdmin: bool
+    isAutoApprove: bool
 
 class SendMessageDTO(BaseModel):
     room_id: int
     sender_id: int
+    sender_name: str
     content: str
     
 class CreateConversationDTO(BaseModel):

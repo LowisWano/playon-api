@@ -20,7 +20,7 @@ async def get_all_messages_of_user_endpoint(user_id: int):
         "chatmates": ch
     }
 
-@router.delete("/read/{read_message_id}")
+@router.patch("/read/{read_message_id}")
 async def read_message_endpoint(read_message_id: int):
     return await prisma.readmessage.update(
         where={

@@ -13,13 +13,12 @@ router = APIRouter(
 # frontend will generate the room id if it doesnt exist ( no conversation yet )
 # and send to backend to insert the room id 
 # @router.websocket("/ws/{room}/{client_id}")
-@router.websocket("/ws/{room}/direct/{client_id}/{client_name}/{profile}")
-async def user_chat_websocket(websocket: WebSocket, room: int, client_id: int, client_name: str, profile: str):
+@router.websocket("/ws/{room}/direct/{client_id}/{client_name}")
+async def user_chat_websocket(websocket: WebSocket, room: int, client_id: int, client_name: str):
     payload = RoomManagerPayload(
         room=room,
         client_id=client_id,
         client_name=client_name,
-        profile=profile,
         room_type="user-chat",
         chat_list=user_chat
     )

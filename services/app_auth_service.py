@@ -7,6 +7,7 @@ from pydantic import BaseModel, EmailStr
 import logging
 import os
 from dotenv import load_dotenv
+from prisma.models import Users
 
 # Load environment variables
 load_dotenv()
@@ -128,3 +129,26 @@ class AppAuthService:
             "exp": expire
         }
         return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    
+    async def get_all_users(self, search_name: str, user_id: int):
+        try:
+            await self.db.connect()
+            combined_name_query = """
+                SELECT user_id, first_name, last_name, profile_pic 
+                FROM "Users"
+                WHERE LOWER(CONCAT(first_name, ' ', last_name)) LIKE LOWER($1)
+                AND user_id <> $2
+                LIMIT 15
+            """
+            search_pattern = f"%{search_name}%"  # Changed to match anywhere in the name
+            users = await self.db.query_raw(
+                combined_name_query,
+                search_pattern,
+                user_id
+            )
+            return users
+        except Exception as e:
+            logger.error(f"Error fetching users: {str(e)}")
+            return {"error": str(e)}
+        finally:
+            await self.db.disconnect()
