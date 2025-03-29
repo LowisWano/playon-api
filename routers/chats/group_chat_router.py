@@ -13,17 +13,16 @@ router = APIRouter(
 )
 
 # @router.websocket("/ws/{room}/{client_id}")
-@router.websocket("/ws/{room}/{gc_name}/{client_id}/{client_name}/{profile}")
-async def group_chat_websocket(websocket: WebSocket, room: int, gc_name: str, client_id: int, client_name: str, profile: str):
+@router.websocket("/ws/{room}/{gc_name}/{client_id}/{client_name}")
+async def group_chat_websocket(websocket: WebSocket, room: int, client_id: int, client_name: str):
     payload = RoomManagerPayload(
         room=room,
         client_id=client_id,
         client_name=client_name,
-        profile=profile,
         room_type="group-chat",
         chat_list=group_chat
     )
-    await room_manager(payload, websocket, gc_name)
+    await room_manager(payload, websocket)
 
 @router.get("/users-gc/{user_id}")
 async def get_all_user_group_chats_endpoint(user_id: int):
@@ -32,6 +31,14 @@ async def get_all_user_group_chats_endpoint(user_id: int):
 @router.get("/visit/{group_id}")
 async def get_group_chat_endpoint(group_id: int):
     return await get_group_chat_by_id(group_id);
+
+@router.get("/users-not-in-group-chat/{group_id}/{username}/{user_id}")
+async def search_users_not_in_group_chat_endpoint(group_id: int, username: str, user_id: int):
+    return await search_users_not_in_group_chat(group_id, username, user_id)
+
+@router.get("/recent-contacts-not-in-gc/{group_id}/{user_id}")
+async def get_recent_contacts_not_in_group_chat_endpoint(group_id: int, user_id: int):
+    return await recent_contacts_not_in_group_chat(group_id, user_id)
 
 @router.post("/create-gc")
 async def create_group_chat_endpoint(payloadGC: CreateGroupChatDTO):
@@ -49,7 +56,7 @@ async def accept_user_to_gc_endpoint(group_user: int):
 async def mute_groupchat_for_user_endpoint(group_user_id: int):
     return await mute_groupchat_for_user(group_user_id);
 
-@router.patch("/group-chat/{gc_id}/{new_user_creator_id}")
+@router.patch("/group-chat/transfer-admin/{gc_id}/{new_user_creator_id}")
 async def transfer_creator_role_endpoint(gc_id: int, new_user_creator_id: int):
     return await transfer_creator_role(gc_id, new_user_creator_id)
 

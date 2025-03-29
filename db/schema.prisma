@@ -112,6 +112,9 @@ model Message {
   sender_id     Int
   content       String
   group_chat_id Int?
+  is_mentioned  Boolean     @default(false)
+  // message id
+  replied_to_id Int? 
   is_deleted    Boolean     @default(false)
   sent_at       DateTime    @default(now())
   chat          UserChat?   @relation(fields: [user_chat_id], references: [id], onDelete: Cascade)
@@ -125,6 +128,7 @@ model GroupChat {
   created_by   Int
   gc_name      String
   group_pic    String?
+  auto_approve Boolean     @default(false)
   created_at   DateTime?   @default(now())
   creator      Users       @relation("CreatedGroups", fields: [created_by], references: [id], onDelete: Cascade)
   group_users  GroupUser[]

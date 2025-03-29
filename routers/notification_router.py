@@ -11,7 +11,7 @@ class CreateNotifDTO(BaseModel):
     notif_to_id: int
     notif_from_id: int
     message: str
-    notif_type: int
+    notif_type: str
     redirect_link: str
 
 

@@ -98,3 +98,7 @@ async def get_current_user_info(current_user: Users = Depends(get_current_user))
         "profile_pic": current_user.profile_pic,
         "is_verified": current_user.is_verified
     } 
+    
+@router.get("/all-users/{search_name}/{user_id}")
+async def get_all_users(search_name: str, user_id: int):
+    return await app_auth_service.get_all_users(search_name, user_id)
