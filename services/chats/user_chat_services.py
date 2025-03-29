@@ -134,8 +134,17 @@ async def create_conversation(payload: CreateConversationDTO):
             data={
                 'member1_id': payload.sender_id,
                 'member2_id': payload.receiver_id,
-                'room_id': payload.room_id
+                'room_id': str(payload.room_id)
             }
+        )
+        await send_message(
+            SendMessageDTO(
+                room_id=payload.room_id,
+                sender_id=payload.sender_id,
+                sender_name=payload.sender_name,
+                content=payload.content
+            ),
+            sent_to_id=payload.receiver_id
         )
     except Exception as e:
         raise BadRequestErrorResponse(error_message=str(e)).as_exception()

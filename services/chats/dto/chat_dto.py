@@ -4,6 +4,7 @@ class CreateGroupChatDTO(BaseModel):
     created_by: int
     gc_name: str
     image: str
+    members: list[int] = []
     
 class AddToGroupChatDTO(BaseModel):
     user_id: int
@@ -21,3 +22,4 @@ class CreateConversationDTO(BaseModel):
     sender_id: int
     receiver_id: int
     room_id: int
+    content: str

@@ -29,6 +29,7 @@ async def send_message(payload: SendMessageDTO, gc_name: str):
             msg_id=msg.id
         )
 
+# To revise will use query_raw to avoid user info leak
 async def get_all_user_group_chats(user_id: int):    
     group_chats = await prisma.groupuser.find_many(
         where={
@@ -43,7 +44,8 @@ async def get_all_user_group_chats(user_id: int):
                             "sent_at": "desc"
                         },
                         "include": {
-                            "read_messages": True
+                            "read_messages": True,
+                            "sender": True
                         }
                     }
                 },
@@ -195,6 +197,15 @@ async def create_group_chat(payloadGC: CreateGroupChatDTO):
                 'group_chat_id': gc.id,
                 'user_id': payloadGC.created_by
             }
+        )
+        
+        await prisma.groupuser.create_many(
+            data=[
+                {
+                    'group_chat_id': gc.id,
+                    'user_id': user_id
+                } for user_id in payloadGC.members
+            ]
         )
 
         createdGC = await get_group_chat_by_id(gc.id)
